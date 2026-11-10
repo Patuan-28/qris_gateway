@@ -1,0 +1,7 @@
+{
+  "api_key": "your_secret_api_key_here",
+  "port": 5050,
+  "expiry_minutes": 15,
+  "auto_unique_code": true,
+  "default_static_qris": "00020101021126610014COM.GO-JEK.WWW0118...YOUR_STATIC_QRIS_HERE..."
+}

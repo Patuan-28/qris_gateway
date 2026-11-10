@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pembayaran QRIS GoPay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00880d;
+      --primary-dark: #00660a;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .checkout-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .top-header {
+      background: #f1f5f9;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .merchant-brand {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .timer-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    .order-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .amount-display {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .qr-container {
+      background: white;
+      padding: 14px;
+      border-radius: 16px;
+      border: 2px solid #e2e8f0;
+      display: inline-block;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .qr-container img {
+      width: 230px;
+      height: 230px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-success {
+      background: #dcfce7;
+      color: #166534;
+      font-size: 15px;
+      padding: 10px 18px;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: pulseAnim 1.4s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.4); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+
+    .note-text {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .btn-sim-pay {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      padding: 10px;
+      width: 100%;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-sim-pay:hover {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    /* SUCCESS OVERLAY */
+    .success-view {
+      display: none;
+      padding: 40px 20px;
+    }
+
+    .success-icon {
+      font-size: 64px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .success-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #166534;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="checkout-card">
+    <div class="top-header">
+      <div class="merchant-brand">
+        <span>🟢 <span id="dispMerchant">GoPay Merchant</span></span>
+      </div>
+      <div class="timer-badge" id="dispTimer">⏱️ 15:00</div>
+    </div>
+
+    <div class="card-body" id="pendingSection">
+      <div class="order-label">Total Tagihan (Terkunci)</div>
+      <div class="amount-display" id="dispAmount">Rp 0</div>
+
+      <div class="status-pill status-pending" id="statusBadge">
+        <span class="pulse"></span>
+        <span>Menunggu Pembayaran...</span>
+      </div>
+
+      <div class="qr-container">
+        <img id="dispQr" src="" alt="QRIS Code" />
+      </div>
+
+      <div class="note-text">
+        Buka aplikasi <strong>GoPay</strong>, Gojek, BCA, OVO, atau mobile banking apa saja di HP Anda, lalu scan QRIS di atas.
+      </div>
+
+      <button type="button" class="btn-sim-pay" onclick="simulatePayment()">
+        ⚡ Simulasi Bayar Sukses (Developer Test)
+      </button>
+    </div>
+
+    <!-- TAMPILAN JIKA LUNAS -->
+    <div class="success-view" id="successSection">
+      <span class="success-icon">🎉</span>
+      <h2 class="success-title">Pembayaran Berhasil!</h2>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+        Transaksi telah terverifikasi lunas. Terima kasih atas pembayaran Anda.
+      </p>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; font-size: 13px; text-align: left; line-height: 1.6;">
+        <div>Order ID: <strong id="succOrderId">-</strong></div>
+        <div>TRX ID: <strong id="succTrxId">-</strong></div>
+        <div>Nominal: <strong id="succAmount" style="color: var(--primary);">-</strong></div>
+        <div>Waktu: <strong id="succTime">-</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Ambil trx_id dari URL (contoh: /checkout/TRX-12345 atau ?id=TRX-12345)
+    let trxId = window.location.pathname.split('/').pop();
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('id')) trxId = urlParams.get('id');
+
+    let pollInterval = null;
+    let timerSeconds = 15 * 60;
+
+    async function loadTransaction() {
+      try {
+        const res = await fetch(`/api/v1/qr-status/${trxId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert('Transaksi tidak ditemukan!');
+          return;
+        }
+
+        document.getElementById('dispMerchant').innerText = data.merchant_name || 'GoPay Merchant';
+        document.getElementById('dispAmount').innerText = 'Rp ' + Number(data.amount).toLocaleString('id-ID');
+        document.getElementById('dispQr').src = data.qr_image;
+
+        if (data.status === 'SUCCESS') {
+          showSuccess(data);
+          return;
+        }
+
+        startPolling();
+        startTimer(data.expired_at);
+      } catch (e) {
+        console.error('Error load transaction:', e);
+      }
+    }
+
+    function startTimer(expiredAtStr) {
+      const expTime = new Date(expiredAtStr).getTime();
+      setInterval(() => {
+        const now = Date.now();
+        const diff = Math.max(0, Math.floor((expTime - now) / 1000));
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('dispTimer').innerText = `⏱️ ${m}:${s}`;
+        if (diff <= 0) {
+          document.getElementById('dispTimer').innerText = 'EXPIRED';
+        }
+      }, 1000);
+    }
+
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/v1/qr-status/${trxId}`);
+          const data = await res.json();
+          if (data.status === 'SUCCESS') {
+            clearInterval(pollInterval);
+            showSuccess(data);
+          }
+        } catch (e) {}
+      }, 2500);
+    }
+
+    function showSuccess(data) {
+      document.getElementById('pendingSection').style.display = 'none';
+      document.getElementById('successSection').style.display = 'block';
+      document.getElementById('succOrderId').innerText = data.order_id || '-';
+      document.getElementById('succTrxId').innerText = data.trx_id;
+      document.getElementById('succAmount').innerText = 'Rp ' + Number(data.amount).toLocaleString('id-ID');
+      document.getElementById('succTime').innerText = new Date(data.paid_at || Date.now()).toLocaleTimeString('id-ID');
+    }
+
+    async function simulatePayment() {
+      try {
+        const res = await fetch(`/api/v1/simulate-pay/${trxId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showSuccess(data.transaction);
+        }
+      } catch (e) {
+        alert('Gagal simulasi bayar');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadTransaction);
+  </script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoPay API Gateway Console (Self-Hosted)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00880d;
+      --primary-hover: #00660a;
+      --primary-light: #e8f5e9;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; }
+
+    .header-bar { text-align: center; max-width: 800px; margin-bottom: 24px; }
+    .badge-pill { display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+    .header-bar h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .header-bar p { color: var(--muted); font-size: 14px; }
+
+    .app-container { width: 100%; max-width: 1000px; }
+
+    /* NAVIGATION TABS */
+    .tabs-nav { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 2px; }
+    .tab-btn { background: none; border: none; padding: 10px 18px; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04); margin-bottom: 20px; }
+    .card-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 860px) { .grid-2 { grid-template-columns: 1.05fr 0.95fr; } }
+
+    /* MERCHANT INFO BOX */
+    .saved-merchant-box {
+      background: #ecfdf5;
+      border: 1.5px solid #a7f3d0;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .merchant-avatar {
+      width: 46px;
+      height: 46px;
+      background: var(--primary);
+      color: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #334155; }
+    input[type="number"], input[type="text"] { width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 18px; font-weight: 700; outline: none; background: #fafafa; }
+    input:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(0, 136, 13, 0.12); }
+
+    .chips-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .chip { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .chip:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+    .checkbox-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 22px;
+      cursor: pointer;
+    }
+
+    .checkbox-box input { cursor: pointer; width: 16px; height: 16px; }
+
+    .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(0, 136, 13, 0.25); transition: all 0.2s; }
+    .btn-submit:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* RESULT CARD */
+    .preview-box { text-align: center; padding: 10px; }
+    .qr-frame { background: white; padding: 14px; border-radius: 16px; border: 2px solid #e2e8f0; display: inline-block; margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .qr-frame img { width: 220px; height: 220px; display: block; }
+    .nominal-badge { font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+
+    /* TABLE TRANSAKSI */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th { background: #f8fafc; padding: 12px 14px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+
+    .status-tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; }
+    .tag-pending { background: #fef3c7; color: #92400e; }
+    .tag-success { background: #dcfce7; color: #166534; }
+    .tag-expired { background: #fee2e2; color: #991b1b; }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 6px; border: 1px solid var(--border); background: white; cursor: pointer; text-decoration: none; display: inline-block; color: var(--text); }
+    .btn-sm:hover { background: #f1f5f9; }
+
+    /* CODE SNIPPET */
+    pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; overflow-x: auto; line-height: 1.5; margin-bottom: 14px; }
+    code { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div class="badge-pill">⚡ GoPay API Gateway Mandiri</div>
+    <h1>GoPay Merchant Dynamic QRIS Generator</h1>
+    <p>QRIS toko tersimpan permanen. Anda tinggal mengetik nominal transaksi, dan QRIS dinamis langsung jadi detik itu juga.</p>
+    <div id="gobizStatusPill" style="display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#dc2626;"></span>
+      <span id="gobizStatusText">Memeriksa status akun GoBiz...</span>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- NAVIGATION TABS & API KEY SETTINGS -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+      <div class="tabs-nav" style="margin-bottom: 0;">
+        <button class="tab-btn active" onclick="switchTab('tab-tester')">⚡ Buat QRIS Pembayaran</button>
+        <button class="tab-btn" onclick="switchTab('tab-history')">📊 Riwayat Transaksi</button>
+        <button class="tab-btn" onclick="switchTab('tab-docs')">🔌 Dokumentasi REST API</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; background: white; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--border);">
+        <span style="font-size: 12px; font-weight: 700; color: var(--muted);">🔑 API Key:</span>
+        <input type="password" id="userApiKey" placeholder="Masukkan API Key" style="width: 170px; padding: 4px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border);" oninput="saveApiKey(this.value)" />
+        <button type="button" class="btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="toggleApiKeyVisibility()" id="btnToggleKey" title="Tampilkan/Sembunyikan">👁️</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: FORM GENERATE CEPAT -->
+    <div id="tab-tester" class="tab-content active">
+      <div class="card">
+        <div class="grid-2">
+          
+          <!-- FORM KIRI: HANYA KETIK NOMINAL -->
+          <div>
+            <!-- INFO MERCHANT PERMANEN -->
+            <div class="saved-merchant-box">
+              <div class="merchant-avatar">🏪</div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase;">QRIS GoPay Tersimpan</div>
+                <div style="font-size: 16px; font-weight: 800; color: #0f172a;" id="dispSavedMerchant">Merchant QRIS</div>
+                <div style="font-size: 12px; color: #64748b;" id="dispSavedCity">QRIS Statis Terkonfigurasi</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <label>Nominal Pembayaran (Rp):</label>
+              <input type="number" id="nominal" value="1000" min="100" step="1" placeholder="Contoh: 1000" />
+              
+              <div class="chips-row">
+                <span class="chip" onclick="setNominal(100)">Rp 100 (Tes)</span>
+                <span class="chip" onclick="setNominal(1000)">Rp 1.000</span>
+                <span class="chip" onclick="setNominal(5000)">Rp 5.000</span>
+                <span class="chip" onclick="setNominal(10000)">Rp 10.000</span>
+                <span class="chip" onclick="setNominal(50000)">Rp 50.000</span>
+              </div>
+            </div>
+
+            <label class="checkbox-box">
+              <input type="checkbox" id="addUniqueCode" checked />
+              <span style="font-size: 13px; font-weight: 600;">Tambahkan Kode Unik 3 Digit Acak (misal: Rp 50.142)</span>
+            </label>
+
+            <button type="button" class="btn-submit" id="btnCharge" onclick="createCharge()">
+              <span>🚀 Generate QRIS Dinamis Sekarang</span>
+            </button>
+          </div>
+
+          <!-- HASIL KANAN: PREVIEW QRIS LANGSUNG -->
+          <div class="preview-box">
+            <div id="previewEmpty" style="padding: 50px 20px; color: var(--muted);">
+              <div style="font-size: 48px; margin-bottom: 8px;">📱</div>
+              <div style="font-weight: 700; font-size: 15px;">Siap Generate</div>
+              <p style="font-size: 12px; margin-top: 4px;">Ketik nominal di sebelah kiri dan klik tombol <strong>Generate</strong>.</p>
+            </div>
+
+            <div id="previewResult" style="display: none;">
+              <span class="status-tag tag-pending" id="resStatus">PENDING</span>
+              <div style="font-size: 16px; font-weight: 800; margin: 8px 0 2px;" id="resMerchant">Merchant QRIS</div>
+              <div class="nominal-badge" id="resAmount">Rp 50.000</div>
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px;">TRX ID: <strong id="resTrxId">-</strong></div>
+
+              <div class="qr-frame">
+                <img id="resQrImage" src="" alt="Dynamic QRIS" />
+              </div>
+
+              <div style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">
+                Scan QR di atas dengan <strong>GoPay</strong>, BCA, OVO, atau Dana di HP Anda. Nominal akan terkunci otomatis!
+              </div>
+
+              <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <a id="btnOpenCheckout" href="#" target="_blank" class="btn-sm" style="background: var(--primary); color: white; border-color: var(--primary); padding: 8px 14px;">
+                  🌐 Buka Layar Pembeli (Checkout)
+                </a>
+                <button type="button" class="btn-sm" onclick="downloadQr()">⬇️ Download PNG</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: RIWAYAT TRANSAKSI -->
+    <div id="tab-history" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>📊 Riwayat Transaksi Gateway (Live Database)</span>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnDeleteSelected" onclick="deleteSelected()" style="display: none; background: #fee2e2; color: #991b1b; border-color: #fca5a5;">
+              🗑️ Hapus Terpilih (<span id="selectedCount">0</span>)
+            </button>
+            <button class="btn-sm" onclick="clearAllTransactions()" style="background: #fff1f2; color: #e11d48; border-color: #fecdd3;">
+              ⚠️ Clear All
+            </button>
+            <button class="btn-sm" onclick="loadTransactions()">🔄 Refresh</button>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">
+                  <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="cursor: pointer; width: 16px; height: 16px;" />
+                </th>
+                <th>TRX ID</th>
+                <th>Order ID</th>
+                <th>Nominal</th>
+                <th>Status</th>
+                <th>Waktu Dibuat</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+              <tr><td colspan="7" style="text-align: center; color: var(--muted);">Memuat riwayat transaksi...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DOKUMENTASI REST API -->
+    <div id="tab-docs" class="tab-content">
+      <div class="card">
+        <div class="card-title">🔌 Cara Menembak API Gateway dari Backend / Website Anda</div>
+        
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+          Website/Aplikasi Anda cukup mengirimkan nominal tagihan ke endpoint lokal ini, QRIS dinamis langsung kembali dalam format JSON.
+        </p>
+
+        <label>1. Request Pembuatan QRIS (Protected API):</label>
+        <pre><code>POST http://localhost:5050/api/v1/charge
+Headers:
+  Content-Type: application/json
+  X-API-Key: YOUR_SECRET_API_KEY
+
+Body JSON:
+{
+  "amount": 50000,
+  "order_id": "ORDER-1001",
+  "add_unique_code": true
+}</code></pre>
+
+        <label>2. Cek Status Pembayaran (Public API - Tanpa API Key):</label>
+        <pre><code>GET http://localhost:5050/api/v1/qr-status/TRX-xxxxx</code></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+
+      if (tabId === 'tab-history') {
+        loadTransactions();
+      }
+    }
+
+    function setNominal(val) {
+      document.getElementById('nominal').value = val;
+    }
+
+    // ====== API KEY HELPER (Tersimpan di Browser Lokal) ======
+    function getApiKey() {
+      let key = localStorage.getItem('gopay_api_key');
+      if (!key) {
+        const inputVal = document.getElementById('userApiKey')?.value;
+        if (inputVal) {
+          key = inputVal.trim();
+          localStorage.setItem('gopay_api_key', key);
+        }
+      }
+      return key || '';
+    }
+
+    function saveApiKey(val) {
+      localStorage.setItem('gopay_api_key', val.trim());
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById('userApiKey');
+      const btn = document.getElementById('btnToggleKey');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = '🔒';
+      } else {
+        input.type = 'password';
+        btn.innerText = '👁️';
+      }
+    }
+
+    function ensureApiKey() {
+      let key = getApiKey();
+      if (!key) {
+        key = prompt('Silakan masukkan API Key Anda (dapat dilihat di file .env):');
+        if (key) {
+          saveApiKey(key);
+          const inputEl = document.getElementById('userApiKey');
+          if (inputEl) inputEl.value = key;
+        }
+      }
+      return key;
+    }
+
+    // ====== CHARGE API ======
+    async function createCharge() {
+      const apiKey = ensureApiKey();
+      if (!apiKey) return;
+
+      const amount = document.getElementById('nominal').value;
+      const addUnique = document.getElementById('addUniqueCode').checked;
+      const btn = document.getElementById('btnCharge');
+
+      if (!amount || amount < 1) {
+        alert('Masukkan nominal minimal Rp 1');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Membuat QRIS Dinamis...';
+
+      try {
+        const res = await fetch('/api/v1/charge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({
+            amount: amount,
+            add_unique_code: addUnique
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal membuat transaksi');
+
+        document.getElementById('previewEmpty').style.display = 'none';
+        document.getElementById('previewResult').style.display = 'block';
+
+        document.getElementById('resMerchant').innerText = data.merchant_name;
+        document.getElementById('resAmount').innerText = 'Rp ' + Number(data.amount).toLocaleString('id-ID');
+        document.getElementById('resTrxId').innerText = data.trx_id;
+        document.getElementById('resQrImage').src = data.qr_image;
+        document.getElementById('btnOpenCheckout').href = `/checkout/${data.trx_id}`;
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Generate QRIS Dinamis Sekarang';
+      }
+    }
+
+    function downloadQr() {
+      const src = document.getElementById('resQrImage').src;
+      if (!src) return;
+      const a = document.createElement('a');
+      a.download = 'qris-gopay-' + Date.now() + '.png';
+      a.href = src;
+      a.click();
+    }
+
+    // ====== LOAD RIWAYAT & DELETE ======
+    async function loadTransactions() {
+      const apiKey = getApiKey();
+      const tbody = document.getElementById('txTableBody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Memuat riwayat...</td></tr>';
+      const masterCb = document.getElementById('selectAllCheckbox');
+      if (masterCb) masterCb.checked = false;
+      updateSelectedCount();
+
+      if (!apiKey) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #b45309; padding: 20px;">⚠️ Silakan masukkan API Key di sudut kanan atas untuk melihat riwayat transaksi.</td></tr>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/transactions', {
+          headers: { 'X-API-Key': apiKey }
+        });
+        const result = await res.json();
+
+        if (!result.data || result.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--muted); padding: 30px;">Belum ada riwayat transaksi.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = result.data.map(tx => {
+          let tagClass = 'tag-pending';
+          if (tx.status === 'SUCCESS') tagClass = 'tag-success';
+          if (tx.status === 'EXPIRED') tagClass = 'tag-expired';
+
+          return `
+            <tr>
+              <td style="text-align: center;">
+                <input type="checkbox" class="tx-checkbox" value="${tx.trx_id}" onchange="updateSelectedCount()" style="cursor: pointer; width: 16px; height: 16px;" />
+              </td>
+              <td><code>${tx.trx_id}</code></td>
+              <td>${tx.order_id}</td>
+              <td><strong>Rp ${Number(tx.amount).toLocaleString('id-ID')}</strong></td>
+              <td><span class="status-tag ${tagClass}">${tx.status}</span></td>
+              <td>${new Date(tx.created_at).toLocaleTimeString('id-ID')}</td>
+              <td>
+                <a href="/checkout/${tx.trx_id}" target="_blank" class="btn-sm">Buka Checkout</a>
+                ${tx.status === 'PENDING' ? `<button onclick="simPay('${tx.trx_id}')" class="btn-sm" style="color: green;">Bayar</button>` : ''}
+                <button onclick="deleteSingle('${tx.trx_id}')" class="btn-sm" style="color: #e11d48;" title="Hapus">🗑️</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color: red; text-align: center;">Gagal memuat transaksi</td></tr>';
+      }
+    }
+
+    function toggleSelectAll(master) {
+      const checkboxes = document.querySelectorAll('.tx-checkbox');
+      checkboxes.forEach(cb => cb.checked = master.checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const selected = document.querySelectorAll('.tx-checkbox:checked');
+      const count = selected.length;
+      const counterEl = document.getElementById('selectedCount');
+      if (counterEl) counterEl.innerText = count;
+      const btnDelete = document.getElementById('btnDeleteSelected');
+      if (btnDelete) {
+        btnDelete.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    async function deleteSelected() {
+      const apiKey = ensureApiKey();
+      if (!apiKey) return;
+
+      const selected = Array.from(document.querySelectorAll('.tx-checkbox:checked')).map(cb => cb.value);
+      if (selected.length === 0) return;
+
+      if (!confirm(`Yakin ingin menghapus ${selected.length} transaksi yang dipilih?`)) return;
+
+      try {
+        const res = await fetch('/api/v1/transactions/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({ trx_ids: selected })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadTransactions();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (e) {
+        alert('Gagal menghapus transaksi');
+      }
+    }
+
+    async function deleteSingle(trxId) {
+      const apiKey = ensureApiKey();
+      if (!apiKey) return;
+
+      if (!confirm(`Hapus transaksi ${trxId}?`)) return;
+      try {
+        await fetch('/api/v1/transactions/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({ trx_ids: [trxId] })
+        });
+        loadTransactions();
+      } catch (e) {
+        alert('Gagal menghapus');
+      }
+    }
+
+    async function clearAllTransactions() {
+      const apiKey = ensureApiKey();
+      if (!apiKey) return;
+
+      if (!confirm('⚠️ PERINGATAN: Yakin ingin MENGHAPUS SEMUA riwayat transaksi? Tindakan ini tidak dapat dibatalkan.')) return;
+
+      try {
+        const res = await fetch('/api/v1/transactions/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({ all: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadTransactions();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (e) {
+        alert('Gagal menghapus semua transaksi');
+      }
+    }
+
+    async function simPay(trxId) {
+      if (!confirm(`Simulasi pembayaran lunas untuk ${trxId}?`)) return;
+      await fetch(`/api/v1/simulate-pay/${trxId}`, { method: 'POST' });
+      loadTransactions();
+    }
+
+    async function checkAccountStatus() {
+      try {
+        const res = await fetch('/api/v1/account-status');
+        const data = await res.json();
+        const pill = document.getElementById('gobizStatusPill');
+        if (!pill) return;
+
+        if (data.is_connected) {
+          pill.style.background = '#dcfce7';
+          pill.style.color = '#166534';
+          pill.style.borderColor = '#bbf7d0';
+          pill.innerHTML = `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#16a34a;"></span> GoBiz Terhubung: <strong>${data.phone_number}</strong> (Auto-Polling Mutasi Aktif)`;
+        } else {
+          pill.style.background = '#fef3c7';
+          pill.style.color = '#92400e';
+          pill.style.borderColor = '#fde68a';
+          pill.innerHTML = `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#d97706;"></span> GoBiz Belum Login — Jalankan <code>node login.js</code> di terminal agar bisa deteksi transfer HP otomatis`;
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const storedKey = localStorage.getItem('gopay_api_key');
+      const keyInput = document.getElementById('userApiKey');
+      if (keyInput && storedKey) {
+        keyInput.value = storedKey;
+      }
+      checkAccountStatus();
+      setInterval(checkAccountStatus, 10000);
+    });
+  </script>
+</body>
+</html>

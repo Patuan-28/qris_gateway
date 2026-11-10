@@ -1,0 +1,39 @@
+# ==========================================
+# GITIGNORE - Gopay & QRIS Payment Gateway
+# Mengamankan seluruh token, cookie, database, & key
+# ==========================================
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment Variables & Configuration
+.env
+.env.local
+.env.*.local
+config.json
+
+# GoBiz / GoPay Session & Token (SANGAT RAHASIA)
+.GOPAY_SESI_JANGAN_DIHAPUS.json
+.gopay_cache.json
+data/session.json
+*.session.json
+
+# Database Riwayat Transaksi Lokal
+data/*.json
+!data/.gitkeep
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+.vscode/
+*.tmp
+*.bak
